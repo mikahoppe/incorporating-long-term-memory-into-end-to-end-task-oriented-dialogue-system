@@ -7,6 +7,7 @@ import asyncio
 from memory import run
 from memory import memory
 from memory import llm
+from memory import think
 
 logging.basicConfig(level=logging.INFO)
 
@@ -15,6 +16,7 @@ def reload():
     importlib.reload(run)
     importlib.reload(memory)
     importlib.reload(llm)
+    importlib.reload(think)
 
 
 class Handler(FileSystemEventHandler):

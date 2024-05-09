@@ -66,7 +66,7 @@ class Client:
 
     def complete(
         self, messages: list[ChatCompletionMessageParam], stream: bool = False
-    ) -> ChatCompletion:
+    ) -> str:
         try:
             response = chat_threaded({
                 "model": "gpt-4-turbo",
