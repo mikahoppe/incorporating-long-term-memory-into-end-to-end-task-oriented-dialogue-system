@@ -1,0 +1,7 @@
+psycopg2-binary
+sqlalchemy
+python-dotenv
+watchdog
+openai
+asyncio
+litellm
