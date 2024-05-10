@@ -1,14 +1,11 @@
-import logging
 import os
-import threading
 
 from memory import memory
-from memory.llm import Client, Provider
 from memory.think import think
 
 
 async def run():
-    _memory = memory.Memory()
+    _memory = memory.LLMMemory()
     _memory.connect(
         "postgresql",
         os.getenv("POSTGRES_USER"),
@@ -23,7 +20,7 @@ async def run():
 
     artefact = think(utterance, memories)
 
-    _memory.perceive(artefact)
+    _memory.perceive(utterance, artefact)
     _memory.rethink()
 
 

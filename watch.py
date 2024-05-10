@@ -8,6 +8,7 @@ from memory import run
 from memory import memory
 from memory import llm
 from memory import think
+from memory import prompts
 
 logging.basicConfig(level=logging.INFO)
 
@@ -17,6 +18,7 @@ def reload():
     importlib.reload(memory)
     importlib.reload(llm)
     importlib.reload(think)
+    importlib.reload(prompts)
 
 
 class Handler(FileSystemEventHandler):

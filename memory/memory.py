@@ -1,16 +1,26 @@
 import logging
+import re
+from collections import namedtuple
 from enum import Enum
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+
+from memory.llm import Client, Provider
+from memory.prompts import prompts, Prompts
+from memory.storage import store_memory, get_memory
 
 
 class Artefact(str):
     pass
 
 
-class Memo(str):
-    pass
+BaseMemory = namedtuple('Memory', ['subject', 'verb', 'object'])
+
+
+class Memory(BaseMemory):
+    def __str__(self):
+        return f"(self.subject, self.verb, self.object)"
 
 
 class Timeframe(Enum):
@@ -19,7 +29,7 @@ class Timeframe(Enum):
     Year = 'year'
 
 
-class Memory:
+class LLMMemory:
     @property
     def engine(self):
         return self._engine
@@ -50,32 +60,56 @@ class Memory:
         self.session = Session()
         logging.info("Successfully connected to Database.")
 
-    def recall(self, observation: str) -> list[Memo]:
+    def recall(self, observation: str) -> list[Memory]:
         logging.info(f"Recall: \"{observation}\"")
 
         clarified = self._clarify(observation)
-        memories = ["Mika"] # self.session.get(clarified)
+
+        # TODO:
+        retrieved_memory = get_memory(self, 1)
+        logging.info(f"Retrieved: {str(retrieved_memory)}")
+        memories = [retrieved_memory]
 
         return memories
 
     def _clarify(self, observation: str) -> str:
+        # TODO:
         logging.info(f"Clarify.")
         return observation
 
-    def perceive(self, artefact: Artefact):
+    def perceive(self, utterance: str, artefact: Artefact):
         logging.info(f"Perceive")
-        memories = self._parse(artefact)
+        memories = self._parse(utterance, artefact)
         for memory in memories:
             self.insert(memory)
 
-    def _parse(self, artefact: Artefact) -> list[Memo]:
+    def _parse(self, utterance: str, artefact: Artefact) -> list[Memory]:
         logging.info(f"Parse.")
-        return artefact.split(' ')
+        client = Client(Provider.OPENAI, 'gpt-4-turbo')
+        text = client.complete([
+            {
+                "role": "system",
+                "content": prompts[Prompts.GENERATE_THOUGHTS]["system"]()
+            },
+            {
+                "role": "user",
+                "content": prompts[Prompts.GENERATE_THOUGHTS]["user"](utterance, artefact)
+            }
+        ])
 
-    def insert(self, memory: Memo):
+        pattern = r"\(([^,]+),\s*([^,]+),\s*([^,]+)\)"
+        memories = list(map(lambda memory: Memory(memory[0], memory[1], memory[2]), re.findall(pattern, text)))
+
+        pattern = r"\([^)]+\)\.\s*(.*?[.!?])"
+        answer = re.findall(pattern, text)
+
+        logging.info(f"Answers: {"\n".join(answer)}")
+        logging.info(f"Memories: {"\n".join(map(lambda memory: str(memory), memories))}")
+        return memories
+
+    def insert(self, memory: Memory):
         logging.info(f"Insert Memory")
-        # self.session.add(memory)
-        self.session.commit()
+        store_memory(self, memory)
 
     def rethink(self):
         logging.info(f"Rethink")
@@ -83,7 +117,9 @@ class Memory:
         self.forget(Timeframe.Week, 0.2)
 
     def merge(self):
+        # TODO:
         logging.info(f"Merge")
 
     def forget(self, timeframe: Timeframe, rate: float):
+        # TODO:
         logging.info(f"Forget: {str(timeframe)} : {rate}")
