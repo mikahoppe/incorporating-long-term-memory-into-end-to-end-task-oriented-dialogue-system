@@ -15,13 +15,16 @@ async def run():
         os.getenv("POSTGRES_NAME")
     )
 
-    utterance = "What is my name?"
-    memories = _memory.recall(utterance)
+    utterances = ["My name is Mika.", "What is my name?"]
 
-    artefact = think(utterance, memories)
+    for utterance in utterances:
+        memories = _memory.recall(utterance)
 
-    _memory.perceive(utterance, artefact)
-    _memory.rethink()
+        artefact = think(utterance, memories)
+
+        _memory.perceive(utterance, artefact)
+        _memory.rethink()
+
     _memory.disconnect()
 
 

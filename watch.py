@@ -39,13 +39,13 @@ if __name__ == "__main__":
     time.sleep(1)
     asyncio.run(main())
 
-    event_handler = Handler()
-    observer = Observer()
-    observer.schedule(event_handler, path='.', recursive=True)
-    observer.start()
+    # event_handler = Handler()
+    # observer = Observer()
+    # observer.schedule(event_handler, path='.', recursive=True)
+    # observer.start()
 
-    try:
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        pass
+    # try:
+    #     while True:
+    #         time.sleep(1)
+    # except KeyboardInterrupt:
+    #     pass

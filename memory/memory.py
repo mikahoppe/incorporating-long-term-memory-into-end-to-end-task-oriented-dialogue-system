@@ -1,6 +1,5 @@
 import logging
 import re
-from collections import namedtuple
 from enum import Enum
 
 from sqlalchemy import create_engine
@@ -8,19 +7,16 @@ from sqlalchemy.orm import sessionmaker
 
 from memory.llm import Client, Provider
 from memory.prompts import prompts, Prompts
-from memory.storage import store_memory, get_memory
+from memory.storage import store_memory, get_memory, recreate
+import uuid
+
+from datasketch import MinHashLSH
+
+from memory.types import Memory
 
 
 class Artefact(str):
     pass
-
-
-BaseMemory = namedtuple('Memory', ['subject', 'verb', 'object'])
-
-
-class Memory(BaseMemory):
-    def __str__(self):
-        return f"(self.subject, self.verb, self.object)"
 
 
 class Timeframe(Enum):
@@ -46,9 +42,18 @@ class LLMMemory:
     def session(self, value):
         self._session = value
 
+    @property
+    def lsh(self):
+        return self._lsh
+
+    @lsh.setter
+    def lsh(self, value):
+        self._lsh = value
+
     def __init__(self):
         self._engine = None
         self._session = None
+        self._lsh = MinHashLSH(threshold=0.5, num_perm=128)
 
     def connect(self, type: str, user: str, password: str, uri: str, port: int | str, database: str):
         logging.info("Connecting to Database.")
@@ -58,6 +63,7 @@ class LLMMemory:
 
         Session = sessionmaker(bind=self.engine)
         self.session = Session()
+        recreate(self)
         logging.info("Successfully connected to Database.")
 
     def disconnect(self):
@@ -73,12 +79,12 @@ class LLMMemory:
 
         clarified = self._clarify(observation)
 
-        # TODO:
-        retrieved_memory = get_memory(self, 1)
+        retrieved_memory = get_memory(self, observation)
         logging.info(f"Retrieved: {str(retrieved_memory)}")
         memories = [retrieved_memory]
 
         return memories
+
 
     def _clarify(self, observation: str) -> str:
         # TODO:
@@ -106,10 +112,12 @@ class LLMMemory:
         ])
 
         pattern = r"\(([^,]+),\s*([^,]+),\s*([^,]+)\)"
-        memories = list(map(lambda memory: Memory(memory[0], memory[1], memory[2]), re.findall(pattern, text)))
+        memories_raw = re.findall(pattern, text)
 
         pattern = r"\([^)]+\)\.\s*(.*?[.!?])"
         answer = re.findall(pattern, text)
+
+        memories = list(map(lambda memory: Memory(uuid.uuid4(), memory[0][0], memory[0][1], memory[0][2], memory[1]), zip(memories_raw, answer)))
 
         logging.info(f"Answers: {"\n".join(answer)}")
         logging.info(f"Memories: {"\n".join(map(lambda memory: str(memory), memories))}")

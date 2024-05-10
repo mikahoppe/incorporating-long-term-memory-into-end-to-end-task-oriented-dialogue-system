@@ -5,3 +5,7 @@ watchdog
 openai
 asyncio
 litellm
+transformers
+torch
+numpy
+datasketch
