@@ -22,6 +22,7 @@ async def run():
 
     _memory.perceive(utterance, artefact)
     _memory.rethink()
+    _memory.disconnect()
 
 
 if __name__ == "__main__":

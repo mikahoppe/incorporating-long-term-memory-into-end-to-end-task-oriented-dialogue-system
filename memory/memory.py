@@ -60,6 +60,14 @@ class LLMMemory:
         self.session = Session()
         logging.info("Successfully connected to Database.")
 
+    def disconnect(self):
+        logging.info("Disconnecting from Database.")
+        self.session.close()
+        self.engine.dispose()
+        logging.info("Successfully disconnected from Database.")
+        self._session = None
+        self._engine = None
+
     def recall(self, observation: str) -> list[Memory]:
         logging.info(f"Recall: \"{observation}\"")
 
